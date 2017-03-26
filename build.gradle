@@ -1,6 +1,10 @@
+configurations {
+    runtimeAgent
+}
+
 buildscript {
 	ext {
-		springBootVersion = '1.4.4.RELEASE'
+		springBootVersion = '1.5.2.RELEASE'
 	}
 	repositories {
 		mavenCentral()
@@ -25,10 +29,26 @@ repositories {
 	mavenCentral()
 }
 
-
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-aop')
 	compile("org.springframework.boot:spring-boot-starter-web")
 
 	testCompile('org.springframework.boot:spring-boot-starter-test')
+
+    runtimeAgent("org.springframework:spring-instrument")
+    runtimeAgent("org.aspectj:aspectjweaver")
+}
+
+test.doFirst {
+    configurations.runtimeAgent.each {
+        File jarFile ->
+            jvmArgs("-javaagent:${jarFile.absolutePath}")
+    }
+}
+
+bootRun.doFirst {
+    configurations.runtimeAgent.each {
+        File jarFile ->
+            jvmArgs("-javaagent:${jarFile.absolutePath}")
+    }
 }

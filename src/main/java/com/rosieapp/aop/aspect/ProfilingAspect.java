@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
 @Aspect
-@Component
 public class ProfilingAspect {
   private static final Logger LOGGER = LoggerFactory.getLogger(ProfilingAspect.class);
 
