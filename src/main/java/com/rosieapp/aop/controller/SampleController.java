@@ -9,7 +9,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Created by gkatzioura on 5/28/16.
+ * A simple REST controller.
+ *
+ * <p>This exposes a single resource, {@code /sample}, which can take an optional
+ * {@code sampleName} query string parameter.</p>
+ *
+ * <p>Originally written by
+ * <a href="https://github.com/gkatzioura/egkatzioura.wordpress.com/tree/master/SpringAspectOrientation">
+ * Emmanouil Gkatziouras</a>.</p>
+ *
+ * @author Emmanouil Gkatziouras (gkatzioura@gmail.com)
+ * @author Guy Elsmore-Paddock (guy@rosieapp.com)
  */
 @RestController
 public class SampleController {

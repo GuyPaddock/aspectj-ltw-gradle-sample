@@ -6,7 +6,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * @author Guy Paddock (guy@redbottledesign.com)
+ * A simple Spring service.
+ *
+ * <p>Originally written by
+ * <a href="https://github.com/gkatzioura/egkatzioura.wordpress.com/tree/master/SpringAspectOrientation">
+ * Emmanouil Gkatziouras</a>.</p>
+ *
+ * @author Emmanouil Gkatziouras (gkatzioura@gmail.com)
+ * @author Guy Elsmore-Paddock (guy@rosieapp.com)
  */
 @Service
 public class SampleService {

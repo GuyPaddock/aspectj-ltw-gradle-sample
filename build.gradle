@@ -1,20 +1,22 @@
 configurations {
+    // Configuration that tracks libraries needed to run the AspectJ compiler
     ajc
 
+    // Configuration that tracks the agents added to the JVM at run-time
     runtimeAgent
 }
 
 buildscript {
-	ext {
-		springBootVersion = '1.5.2.RELEASE'
-		aspectjVersion    = '1.8.10'
-	}
-	repositories {
+    ext {
+        springBootVersion = '1.5.2.RELEASE'
+        aspectjVersion    = '1.8.10'
+    }
+    repositories {
         mavenCentral()
-	}
-	dependencies {
-		classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
-	}
+    }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+    }
 }
 
 apply plugin: 'java'
@@ -23,8 +25,8 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 jar {
-	baseName = 'sample'
-	version  = '0.0.1-SNAPSHOT'
+    baseName = 'sample'
+    version  = '0.0.1-SNAPSHOT'
 }
 
 sourceCompatibility = 1.8
@@ -34,28 +36,40 @@ repositories {
 }
 
 dependencies {
-	compile "org.springframework.boot:spring-boot-starter-aop"
-	compile "org.springframework.boot:spring-boot-starter-web"
+    // Required top-level dependency to support AOP and the AspectJ Transformer in Spring, even
+    // when using Load-Time Weaving (LTW).
+    compile "org.springframework.boot:spring-boot-starter-aop"
 
-    // AspectJ Build
+    // Required for the sample project to be able to run a simple MVC web app
+    compile "org.springframework.boot:spring-boot-starter-web"
+
+    // BEGIN: Required for AspectJ Compiler
     compile "org.aspectj:aspectjrt:$aspectjVersion"
     compile "org.aspectj:aspectjweaver:$aspectjVersion"
     ajc "org.aspectj:aspectjtools:$aspectjVersion"
+    // END
 
-	testCompile "org.springframework.boot:spring-boot-starter-test"
+    testCompile "org.springframework.boot:spring-boot-starter-test"
 
+    // BEGIN: Required for LTW to work when the application is run via the "test" or bootRun" Gradle
+    //        tasks.
     runtimeAgent "org.springframework:spring-instrument"
     runtimeAgent "org.aspectj:aspectjweaver"
+    // END
 }
 
-// TODO: Find or create a plug-in for this instead.
 sourceSets {
+    // This is a distinct source set from the "main" Java source set, to ensure that the AJC
+    // compiler does not weave-in aspects at compile time (we want them done via LTW).
     aspects {
         java {
             srcDir  'src/aspects/aspectj'
             include '**/*.aj'
 
-            // FIXME: Make this not necessary
+            // This ensures that all of the classes available to the main application are accessible
+            // to aspects as well.
+            //
+            // TODO: See if there is a way to make this unnecessary
             compileClasspath = sourceSets.main.compileClasspath
             runtimeClasspath = sourceSets.main.runtimeClasspath
         }
@@ -93,6 +107,7 @@ compileJava {
 }
 
 test.doFirst {
+    // Ensure that all of the agents we need to load at run-time happen for tests
     configurations.runtimeAgent.each {
         File jarFile ->
             jvmArgs "-javaagent:${jarFile.absolutePath}"
@@ -100,6 +115,8 @@ test.doFirst {
 }
 
 bootRun.doFirst {
+    // Ensure that all of the agents we need to load at run-time happen when running the app through
+    // Gradle
     configurations.runtimeAgent.each {
         File jarFile ->
             jvmArgs "-javaagent:${jarFile.absolutePath}"
