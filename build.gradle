@@ -1,54 +1,107 @@
 configurations {
+    ajc
+
     runtimeAgent
 }
 
 buildscript {
 	ext {
 		springBootVersion = '1.5.2.RELEASE'
+		aspectjVersion    = '1.8.10'
 	}
 	repositories {
-		mavenCentral()
+        mavenCentral()
 	}
 	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
 	}
 }
 
 apply plugin: 'java'
-apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 jar {
 	baseName = 'sample'
-	version = '0.0.1-SNAPSHOT'
+	version  = '0.0.1-SNAPSHOT'
 }
 
 sourceCompatibility = 1.8
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	compile('org.springframework.boot:spring-boot-starter-aop')
-	compile("org.springframework.boot:spring-boot-starter-web")
+	compile "org.springframework.boot:spring-boot-starter-aop"
+	compile "org.springframework.boot:spring-boot-starter-web"
 
-	testCompile('org.springframework.boot:spring-boot-starter-test')
+    // AspectJ Build
+    compile "org.aspectj:aspectjrt:$aspectjVersion"
+    compile "org.aspectj:aspectjweaver:$aspectjVersion"
+    ajc "org.aspectj:aspectjtools:$aspectjVersion"
 
-    runtimeAgent("org.springframework:spring-instrument")
-    runtimeAgent("org.aspectj:aspectjweaver")
+	testCompile "org.springframework.boot:spring-boot-starter-test"
+
+    runtimeAgent "org.springframework:spring-instrument"
+    runtimeAgent "org.aspectj:aspectjweaver"
+}
+
+// TODO: Find or create a plug-in for this instead.
+sourceSets {
+    aspects {
+        java {
+            srcDir  'src/aspects/aspectj'
+            include '**/*.aj'
+
+            // FIXME: Make this not necessary
+            compileClasspath = sourceSets.main.compileClasspath
+            runtimeClasspath = sourceSets.main.runtimeClasspath
+        }
+    }
+}
+
+// TODO: Find or create a plug-in for this instead.
+def aspectj = { sourceFileSet, destDir ->
+    ant.taskdef(
+        resource:  "org/aspectj/tools/ant/taskdefs/aspectjTaskdefs.properties",
+        classpath: configurations.ajc.asPath
+    )
+
+    ant.iajc(maxmem:    "1024m",
+             fork:      "true",
+             Xlint:     "warning",
+             classpath: sourceFileSet.runtimeClasspath.asPath,
+             destDir:   destDir,
+             source:    project.sourceCompatibility,
+             target:    project.targetCompatibility) {
+        sourceroots {
+            sourceFileSet.java.srcDirs.each { dir ->
+                pathelement(path: dir)
+            }
+        }
+    }
+}
+
+// TODO: Find or create a plug-in for this instead.
+compileJava {
+    doLast {
+        aspectj(project.sourceSets.aspects,
+                project.sourceSets.main.output.classesDir.absolutePath)
+    }
 }
 
 test.doFirst {
     configurations.runtimeAgent.each {
         File jarFile ->
-            jvmArgs("-javaagent:${jarFile.absolutePath}")
+            jvmArgs "-javaagent:${jarFile.absolutePath}"
     }
 }
 
 bootRun.doFirst {
     configurations.runtimeAgent.each {
         File jarFile ->
-            jvmArgs("-javaagent:${jarFile.absolutePath}")
+            jvmArgs "-javaagent:${jarFile.absolutePath}"
     }
 }
